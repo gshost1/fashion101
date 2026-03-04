@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { SlidersHorizontal } from 'lucide-react';
 
 const categories = ['All', 'Outerwear', 'Tops', 'Bottoms', 'Footwear', 'Accessories'];
 const styles = ['All', 'Gorpcore', 'Streetwear', 'Classic'];
@@ -51,6 +52,20 @@ export default function DiscoveryFeed({ initialProducts, showStyleFilter = false
                 active={activeCategory}
                 onChange={setActiveCategory}
             />
+
+            {/* Filter/Sort header bar */}
+            <div className="max-w-6xl mx-auto flex justify-between items-center py-4 mb-6 border-b border-neutral-800">
+                <button
+                    onClick={() => { }}
+                    className="flex items-center gap-2 text-sm font-medium text-white hover:text-neutral-300 transition-colors"
+                >
+                    <SlidersHorizontal size={16} />
+                    Filter / Sort
+                </button>
+                <span className="text-sm text-neutral-500">
+                    {filtered.length} {filtered.length === 1 ? 'Item' : 'Items'}
+                </span>
+            </div>
 
             {/* Empty state */}
             {filtered.length === 0 ? (
@@ -114,8 +129,8 @@ function FilterRow({
                         key={opt}
                         onClick={() => onChange(opt)}
                         className={`px-4 py-2 rounded-lg text-xs font-semibold tracking-wide uppercase transition-all duration-200 whitespace-nowrap ${active === opt
-                                ? 'text-white bg-white/10'
-                                : 'text-neutral-500 hover:text-neutral-300'
+                            ? 'text-white bg-white/10'
+                            : 'text-neutral-500 hover:text-neutral-300'
                             }`}
                     >
                         {opt}
