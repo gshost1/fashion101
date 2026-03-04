@@ -57,7 +57,7 @@ export default function StyleQuiz() {
     }
 
     const current = questions[step];
-    const progress = ((step) / questions.length) * 100;
+    const progress = (step / questions.length) * 100;
 
     return (
         <main className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center px-6 py-16">
@@ -78,12 +78,12 @@ export default function StyleQuiz() {
             <div className="w-full max-w-md mb-10">
                 <div className="flex justify-between text-xs text-neutral-600 mb-2">
                     <span>Question {step + 1} of {questions.length}</span>
-                    <span>{Math.round(((step + 1) / questions.length) * 100)}%</span>
+                    <span>{Math.round((step / questions.length) * 100)}%</span>
                 </div>
                 <div className="h-0.5 bg-neutral-800 w-full rounded-full overflow-hidden">
                     <div
                         className="h-full bg-white transition-all duration-500 ease-out rounded-full"
-                        style={{ width: `${progress + (100 / questions.length)}%` }}
+                        style={{ width: `${progress}%` }}
                     />
                 </div>
             </div>

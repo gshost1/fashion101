@@ -5,6 +5,8 @@ import { supabase } from '@/utils/supabase';
 
 export const revalidate = 0;
 
+const validStyles = ['gorpcore', 'streetwear', 'classic'];
+
 const styleLabels: Record<string, string> = {
   gorpcore: 'Gorpcore / Outdoors',
   streetwear: 'Streetwear / Graphic',
@@ -20,12 +22,19 @@ export default async function Home({ searchParams }: PageProps) {
   const cookieStore = await cookies();
 
   // Priority: URL param → cookie → show quiz
-  const style = params.style || cookieStore.get('user_style')?.value || null;
+  const rawStyle = params.style || cookieStore.get('user_style')?.value || null;
 
   // No style determined — show the quiz
-  if (!style) {
+  if (!rawStyle) {
     return <StyleQuiz />;
   }
+
+  // Bug #4: Invalid style → show quiz
+  if (!validStyles.includes(rawStyle)) {
+    return <StyleQuiz />;
+  }
+
+  const style = rawStyle;
 
   // Fetch products filtered by style
   const { data: products, error } = await supabase
@@ -61,33 +70,43 @@ export default async function Home({ searchParams }: PageProps) {
         </Link>
       </div>
 
-      {/* Product grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-        {products?.map((product: any) => (
-          <Link
-            key={product.id}
-            href={`/product/${product.id}`}
-            className="bg-neutral-900 rounded-2xl overflow-hidden flex flex-col border border-neutral-800 hover:border-neutral-600 transition-all duration-300 group"
-          >
-            <div className="overflow-hidden">
-              <img
-                src={product.image_url}
-                alt={product.title}
-                className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-            </div>
-            <div className="p-5 flex flex-col">
-              <span className="text-xs font-semibold text-neutral-500 uppercase tracking-widest">
-                {product.brands?.name}
-              </span>
-              <h2 className="text-base font-semibold text-white mt-1 leading-snug">
-                {product.title}
-              </h2>
-              <p className="text-xs text-neutral-600 mt-3 tracking-widest uppercase">Tap to view →</p>
-            </div>
-          </Link>
-        ))}
-      </div>
+      {/* Bug #5: Empty state */}
+      {(!products || products.length === 0) ? (
+        <div className="max-w-6xl mx-auto text-center py-24">
+          <p className="text-neutral-500 text-lg">No products found for this style yet.</p>
+        </div>
+      ) : (
+        /* Product grid */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          {products.map((product: any) => (
+            <Link
+              key={product.id}
+              href={`/product/${product.id}`}
+              className="bg-neutral-900 rounded-2xl overflow-hidden flex flex-col border border-neutral-800 hover:border-neutral-600 transition-all duration-300 group"
+            >
+              <div className="overflow-hidden">
+                <img
+                  src={product.image_url}
+                  alt={product.title}
+                  className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+              </div>
+              <div className="p-5 flex flex-col">
+                <span className="text-xs font-semibold text-neutral-500 uppercase tracking-widest">
+                  {product.brands?.name}
+                </span>
+                <h2 className="text-base font-semibold text-white mt-1 leading-snug">
+                  {product.title}
+                </h2>
+                <p className="text-sm text-neutral-400 mt-2">
+                  ${Number(product.price).toFixed(2)}
+                </p>
+                <p className="text-xs text-neutral-600 mt-3 tracking-widest uppercase">Tap to view →</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </main>
   );
 }
