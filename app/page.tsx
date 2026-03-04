@@ -6,12 +6,13 @@ import { supabase } from '@/utils/supabase';
 
 export const revalidate = 0;
 
-const validStyles = ['gorpcore', 'streetwear', 'classic'];
+const validStyles = ['gorpcore', 'streetwear', 'classic', 'all'];
 
 const styleLabels: Record<string, string> = {
   gorpcore: 'Gorpcore / Outdoors',
   streetwear: 'Streetwear / Graphic',
   classic: 'Classic / Minimalist',
+  all: 'All Styles',
 };
 
 interface PageProps {
@@ -33,11 +34,18 @@ export default async function Home({ searchParams }: PageProps) {
   }
 
   const style = rawStyle;
+  const isAll = style === 'all';
 
-  const { data: products, error } = await supabase
+  // Fetch products — all or filtered by style
+  let query = supabase
     .from('products')
-    .select(`id, title, image_url, price, buy_url, category, brands ( name )`)
-    .eq('style', style);
+    .select(`id, title, image_url, price, buy_url, category, style, brands ( name )`);
+
+  if (!isAll) {
+    query = query.eq('style', style);
+  }
+
+  const { data: products, error } = await query;
 
   if (error) {
     return (
@@ -71,7 +79,7 @@ export default async function Home({ searchParams }: PageProps) {
           <p className="text-neutral-500 text-lg">No products found for this style yet.</p>
         </div>
       ) : (
-        <DiscoveryFeed initialProducts={products as any} />
+        <DiscoveryFeed initialProducts={products as any} showStyleFilter={isAll} />
       )}
     </main>
   );

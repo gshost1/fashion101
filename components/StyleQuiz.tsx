@@ -112,6 +112,17 @@ export default function StyleQuiz() {
                     <span key={label} className="tracking-widest uppercase">{label}</span>
                 ))}
             </div>
+
+            {/* Skip quiz */}
+            <button
+                onClick={() => {
+                    document.cookie = `user_style=all; path=/; max-age=${60 * 60 * 24 * 365}`;
+                    router.push('/?style=all');
+                }}
+                className="mt-6 text-xs text-neutral-600 hover:text-white transition tracking-widest uppercase"
+            >
+                Skip → Browse All
+            </button>
         </main>
     );
 }

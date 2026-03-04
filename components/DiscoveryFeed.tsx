@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 
 const categories = ['All', 'Outerwear', 'Tops', 'Bottoms', 'Footwear', 'Accessories'];
+const styles = ['All', 'Gorpcore', 'Streetwear', 'Classic'];
 
 interface Product {
     id: number;
@@ -12,44 +13,49 @@ interface Product {
     price: number;
     buy_url: string;
     category: string | null;
+    style: string | null;
     brands: { name: string } | null;
 }
 
 interface DiscoveryFeedProps {
     initialProducts: Product[];
+    showStyleFilter?: boolean;
 }
 
-export default function DiscoveryFeed({ initialProducts }: DiscoveryFeedProps) {
+export default function DiscoveryFeed({ initialProducts, showStyleFilter = false }: DiscoveryFeedProps) {
     const [activeCategory, setActiveCategory] = useState<string>('All');
+    const [activeStyle, setActiveStyle] = useState<string>('All');
 
-    const filtered = initialProducts.filter(
-        (p) => activeCategory === 'All' || p.category === activeCategory.toLowerCase()
-    );
+    const filtered = initialProducts.filter((p) => {
+        const matchesCategory = activeCategory === 'All' || p.category === activeCategory.toLowerCase();
+        const matchesStyle = !showStyleFilter || activeStyle === 'All' || p.style === activeStyle.toLowerCase();
+        return matchesCategory && matchesStyle;
+    });
 
     return (
         <>
-            {/* Category filter bar */}
-            <div className="max-w-6xl mx-auto mb-8 overflow-x-auto scrollbar-hide">
-                <div className="flex gap-2 min-w-max">
-                    {categories.map((cat) => (
-                        <button
-                            key={cat}
-                            onClick={() => setActiveCategory(cat)}
-                            className={`px-4 py-2 rounded-lg text-xs font-semibold tracking-wide uppercase transition-all duration-200 whitespace-nowrap ${activeCategory === cat
-                                    ? 'text-white bg-white/10'
-                                    : 'text-neutral-500 hover:text-neutral-300'
-                                }`}
-                        >
-                            {cat}
-                        </button>
-                    ))}
-                </div>
-            </div>
+            {/* Style filter — only shown when browsing all */}
+            {showStyleFilter && (
+                <FilterRow
+                    label="Style"
+                    options={styles}
+                    active={activeStyle}
+                    onChange={setActiveStyle}
+                />
+            )}
+
+            {/* Category filter — always shown */}
+            <FilterRow
+                label="Category"
+                options={categories}
+                active={activeCategory}
+                onChange={setActiveCategory}
+            />
 
             {/* Empty state */}
             {filtered.length === 0 ? (
                 <div className="max-w-6xl mx-auto text-center py-24">
-                    <p className="text-neutral-500 text-lg">No products found in this category.</p>
+                    <p className="text-neutral-500 text-lg">No products match these filters.</p>
                 </div>
             ) : (
                 /* Product grid */
@@ -84,5 +90,38 @@ export default function DiscoveryFeed({ initialProducts }: DiscoveryFeedProps) {
                 </div>
             )}
         </>
+    );
+}
+
+/* Reusable filter row component — easy to add more filters later */
+function FilterRow({
+    label,
+    options,
+    active,
+    onChange,
+}: {
+    label: string;
+    options: string[];
+    active: string;
+    onChange: (value: string) => void;
+}) {
+    return (
+        <div className="max-w-6xl mx-auto mb-6">
+            <p className="text-[10px] text-neutral-600 uppercase tracking-widest mb-2">{label}</p>
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+                {options.map((opt) => (
+                    <button
+                        key={opt}
+                        onClick={() => onChange(opt)}
+                        className={`px-4 py-2 rounded-lg text-xs font-semibold tracking-wide uppercase transition-all duration-200 whitespace-nowrap ${active === opt
+                                ? 'text-white bg-white/10'
+                                : 'text-neutral-500 hover:text-neutral-300'
+                            }`}
+                    >
+                        {opt}
+                    </button>
+                ))}
+            </div>
+        </div>
     );
 }
