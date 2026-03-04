@@ -64,8 +64,9 @@ export default async function Home({ searchParams }: PageProps) {
       {/* Product grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
         {products?.map((product: any) => (
-          <div
+          <Link
             key={product.id}
+            href={`/product/${product.id}`}
             className="bg-neutral-900 rounded-2xl overflow-hidden flex flex-col border border-neutral-800 hover:border-neutral-600 transition-all duration-300 group"
           >
             <div className="overflow-hidden">
@@ -75,26 +76,16 @@ export default async function Home({ searchParams }: PageProps) {
                 className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
               />
             </div>
-            <div className="p-5 flex flex-col flex-grow">
+            <div className="p-5 flex flex-col">
               <span className="text-xs font-semibold text-neutral-500 uppercase tracking-widest">
                 {product.brands?.name}
               </span>
               <h2 className="text-base font-semibold text-white mt-1 leading-snug">
                 {product.title}
               </h2>
-              <p className="text-neutral-400 mt-2 text-sm">${product.price}</p>
-              <div className="mt-auto pt-5">
-                <a
-                  href={product.buy_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full text-center bg-white text-black py-2.5 rounded-lg text-sm font-semibold hover:bg-neutral-200 transition"
-                >
-                  Shop Now
-                </a>
-              </div>
+              <p className="text-xs text-neutral-600 mt-3 tracking-widest uppercase">Tap to view →</p>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
     </main>
