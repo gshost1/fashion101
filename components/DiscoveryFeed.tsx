@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal, X, Plus, Minus } from 'lucide-react';
 
-const categories = ['All', 'Outerwear', 'Tops', 'Bottoms', 'Footwear', 'Accessories'];
-const styles = ['All', 'Gorpcore', 'Streetwear', 'Classic'];
+const categories = ['Outerwear', 'Tops', 'Bottoms', 'Footwear', 'Accessories'];
+const styles = ['Gorpcore', 'Streetwear', 'Classic'];
+const sortOptions = ['Newest', 'Price: Low to High', 'Price: High to Low', 'A-Z'];
 
 interface Product {
     id: number;
@@ -24,39 +25,80 @@ interface DiscoveryFeedProps {
 }
 
 export default function DiscoveryFeed({ initialProducts, showStyleFilter = false }: DiscoveryFeedProps) {
-    const [activeCategory, setActiveCategory] = useState<string>('All');
-    const [activeStyle, setActiveStyle] = useState<string>('All');
+    // Active filters
+    const [activeCategories, setActiveCategories] = useState<string[]>([]);
+    const [activeStyles, setActiveStyles] = useState<string[]>([]);
+    const [sortBy, setSortBy] = useState<string>('Newest');
 
-    const filtered = initialProducts.filter((p) => {
-        const matchesCategory = activeCategory === 'All' || p.category === activeCategory.toLowerCase();
-        const matchesStyle = !showStyleFilter || activeStyle === 'All' || p.style === activeStyle.toLowerCase();
-        return matchesCategory && matchesStyle;
-    });
+    // Drawer state
+    const [drawerOpen, setDrawerOpen] = useState(false);
+
+    // Pending filters (applied only on "Apply")
+    const [pendingCategories, setPendingCategories] = useState<string[]>([]);
+    const [pendingStyles, setPendingStyles] = useState<string[]>([]);
+    const [pendingSort, setPendingSort] = useState<string>('Newest');
+
+    // Filter products
+    const filtered = initialProducts
+        .filter((p) => {
+            const matchesCategory = activeCategories.length === 0 || activeCategories.includes(p.category?.toLowerCase() ?? '');
+            const matchesStyle = !showStyleFilter || activeStyles.length === 0 || activeStyles.includes(p.style?.toLowerCase() ?? '');
+            return matchesCategory && matchesStyle;
+        })
+        .sort((a, b) => {
+            if (sortBy === 'Price: Low to High') return a.price - b.price;
+            if (sortBy === 'Price: High to Low') return b.price - a.price;
+            if (sortBy === 'A-Z') return a.title.localeCompare(b.title);
+            return 0; // Newest = default order
+        });
+
+    function openDrawer() {
+        setPendingCategories([...activeCategories]);
+        setPendingStyles([...activeStyles]);
+        setPendingSort(sortBy);
+        setDrawerOpen(true);
+    }
+
+    function applyFilters() {
+        setActiveCategories(pendingCategories);
+        setActiveStyles(pendingStyles);
+        setSortBy(pendingSort);
+        setDrawerOpen(false);
+    }
+
+    function clearAll() {
+        setPendingCategories([]);
+        setPendingStyles([]);
+        setPendingSort('Newest');
+    }
+
+    function togglePendingCategory(cat: string) {
+        const val = cat.toLowerCase();
+        setPendingCategories((prev) =>
+            prev.includes(val) ? prev.filter((c) => c !== val) : [...prev, val]
+        );
+    }
+
+    function togglePendingStyle(style: string) {
+        const val = style.toLowerCase();
+        setPendingStyles((prev) =>
+            prev.includes(val) ? prev.filter((s) => s !== val) : [...prev, val]
+        );
+    }
+
+    // Count how many products match pending filters
+    const pendingCount = initialProducts.filter((p) => {
+        const matchCat = pendingCategories.length === 0 || pendingCategories.includes(p.category?.toLowerCase() ?? '');
+        const matchStyle = !showStyleFilter || pendingStyles.length === 0 || pendingStyles.includes(p.style?.toLowerCase() ?? '');
+        return matchCat && matchStyle;
+    }).length;
 
     return (
         <>
-            {/* Style filter — only shown when browsing all */}
-            {showStyleFilter && (
-                <FilterRow
-                    label="Style"
-                    options={styles}
-                    active={activeStyle}
-                    onChange={setActiveStyle}
-                />
-            )}
-
-            {/* Category filter — always shown */}
-            <FilterRow
-                label="Category"
-                options={categories}
-                active={activeCategory}
-                onChange={setActiveCategory}
-            />
-
             {/* Filter/Sort header bar */}
             <div className="max-w-6xl mx-auto flex justify-between items-center py-4 mb-6 border-b border-neutral-800">
                 <button
-                    onClick={() => { }}
+                    onClick={openDrawer}
                     className="flex items-center gap-2 text-sm font-medium text-white hover:text-neutral-300 transition-colors"
                 >
                     <SlidersHorizontal size={16} />
@@ -67,13 +109,12 @@ export default function DiscoveryFeed({ initialProducts, showStyleFilter = false
                 </span>
             </div>
 
-            {/* Empty state */}
+            {/* Product grid or empty state */}
             {filtered.length === 0 ? (
                 <div className="max-w-6xl mx-auto text-center py-24">
                     <p className="text-neutral-500 text-lg">No products match these filters.</p>
                 </div>
             ) : (
-                /* Product grid */
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
                     {filtered.map((product) => (
                         <Link
@@ -104,39 +145,145 @@ export default function DiscoveryFeed({ initialProducts, showStyleFilter = false
                     ))}
                 </div>
             )}
+
+            {/* Drawer overlay */}
+            {drawerOpen && (
+                <div className="fixed inset-0 z-50 flex justify-end">
+                    {/* Backdrop */}
+                    <div
+                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                        onClick={() => setDrawerOpen(false)}
+                    />
+
+                    {/* Drawer panel */}
+                    <div className="relative w-full max-w-md h-full bg-[#0a0a0a] border-l border-neutral-800 flex flex-col animate-slide-in">
+                        {/* Header */}
+                        <div className="flex justify-between items-center px-6 py-5 border-b border-neutral-800">
+                            <div className="flex items-center gap-2 text-sm font-medium text-white">
+                                <SlidersHorizontal size={16} />
+                                Filter / Sort
+                            </div>
+                            <button
+                                onClick={() => setDrawerOpen(false)}
+                                className="text-neutral-400 hover:text-white transition-colors"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        {/* Scrollable sections */}
+                        <div className="flex-1 overflow-y-auto">
+                            {/* Sort By */}
+                            <AccordionSection title="Sort By" defaultOpen>
+                                <div className="flex flex-col gap-1">
+                                    {sortOptions.map((opt) => (
+                                        <button
+                                            key={opt}
+                                            onClick={() => setPendingSort(opt)}
+                                            className={`text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${pendingSort === opt
+                                                    ? 'text-white bg-white/10'
+                                                    : 'text-neutral-400 hover:text-white'
+                                                }`}
+                                        >
+                                            {opt}
+                                        </button>
+                                    ))}
+                                </div>
+                            </AccordionSection>
+
+                            {/* Style — only when browsing all */}
+                            {showStyleFilter && (
+                                <AccordionSection title="Style">
+                                    <div className="flex flex-col gap-1">
+                                        {styles.map((s) => (
+                                            <button
+                                                key={s}
+                                                onClick={() => togglePendingStyle(s)}
+                                                className={`text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex justify-between items-center ${pendingStyles.includes(s.toLowerCase())
+                                                        ? 'text-white bg-white/10'
+                                                        : 'text-neutral-400 hover:text-white'
+                                                    }`}
+                                            >
+                                                {s}
+                                                {pendingStyles.includes(s.toLowerCase()) && (
+                                                    <span className="text-xs">✓</span>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </AccordionSection>
+                            )}
+
+                            {/* Category */}
+                            <AccordionSection title="Category">
+                                <div className="flex flex-col gap-1">
+                                    {categories.map((cat) => (
+                                        <button
+                                            key={cat}
+                                            onClick={() => togglePendingCategory(cat)}
+                                            className={`text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex justify-between items-center ${pendingCategories.includes(cat.toLowerCase())
+                                                    ? 'text-white bg-white/10'
+                                                    : 'text-neutral-400 hover:text-white'
+                                                }`}
+                                        >
+                                            {cat}
+                                            {pendingCategories.includes(cat.toLowerCase()) && (
+                                                <span className="text-xs">✓</span>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            </AccordionSection>
+                        </div>
+
+                        {/* Footer buttons */}
+                        <div className="px-6 py-5 border-t border-neutral-800 flex gap-3">
+                            <button
+                                onClick={clearAll}
+                                className="flex-1 py-3 rounded-lg border border-neutral-700 text-sm font-semibold text-white hover:bg-neutral-900 transition-colors"
+                            >
+                                Clear All
+                            </button>
+                            <button
+                                onClick={applyFilters}
+                                className="flex-1 py-3 rounded-lg bg-white text-black text-sm font-semibold hover:bg-neutral-200 transition-colors"
+                            >
+                                Apply ({pendingCount})
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }
 
-/* Reusable filter row component — easy to add more filters later */
-function FilterRow({
-    label,
-    options,
-    active,
-    onChange,
+/* Accordion section component */
+function AccordionSection({
+    title,
+    defaultOpen = false,
+    children,
 }: {
-    label: string;
-    options: string[];
-    active: string;
-    onChange: (value: string) => void;
+    title: string;
+    defaultOpen?: boolean;
+    children: React.ReactNode;
 }) {
+    const [open, setOpen] = useState(defaultOpen);
+
     return (
-        <div className="max-w-6xl mx-auto mb-6">
-            <p className="text-[10px] text-neutral-600 uppercase tracking-widest mb-2">{label}</p>
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-                {options.map((opt) => (
-                    <button
-                        key={opt}
-                        onClick={() => onChange(opt)}
-                        className={`px-4 py-2 rounded-lg text-xs font-semibold tracking-wide uppercase transition-all duration-200 whitespace-nowrap ${active === opt
-                            ? 'text-white bg-white/10'
-                            : 'text-neutral-500 hover:text-neutral-300'
-                            }`}
-                    >
-                        {opt}
-                    </button>
-                ))}
-            </div>
+        <div className="border-b border-neutral-800">
+            <button
+                onClick={() => setOpen(!open)}
+                className="w-full flex justify-between items-center px-6 py-5 text-sm font-semibold text-white hover:text-neutral-300 transition-colors"
+            >
+                {title}
+                {open ? <Minus size={16} className="text-neutral-500" /> : <Plus size={16} className="text-neutral-500" />}
+            </button>
+            {open && (
+                <div className="px-6 pb-5">
+                    {children}
+                </div>
+            )}
         </div>
     );
 }
