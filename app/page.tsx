@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import Link from 'next/link';
 import StyleQuiz from '@/components/StyleQuiz';
+import DiscoveryFeed from '@/components/DiscoveryFeed';
 import { supabase } from '@/utils/supabase';
 
 export const revalidate = 0;
@@ -21,25 +22,21 @@ export default async function Home({ searchParams }: PageProps) {
   const params = await searchParams;
   const cookieStore = await cookies();
 
-  // Priority: URL param → cookie → show quiz
   const rawStyle = params.style || cookieStore.get('user_style')?.value || null;
 
-  // No style determined — show the quiz
   if (!rawStyle) {
     return <StyleQuiz />;
   }
 
-  // Bug #4: Invalid style → show quiz
   if (!validStyles.includes(rawStyle)) {
     return <StyleQuiz />;
   }
 
   const style = rawStyle;
 
-  // Fetch products filtered by style
   const { data: products, error } = await supabase
     .from('products')
-    .select(`id, title, image_url, price, buy_url, brands ( name )`)
+    .select(`id, title, image_url, price, buy_url, category, brands ( name )`)
     .eq('style', style);
 
   if (error) {
@@ -54,7 +51,6 @@ export default async function Home({ searchParams }: PageProps) {
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] px-6 py-14">
-      {/* Header */}
       <div className="max-w-6xl mx-auto mb-10 flex items-end justify-between">
         <div>
           <p className="text-xs font-semibold tracking-[0.3em] text-neutral-500 uppercase mb-2">
@@ -70,42 +66,12 @@ export default async function Home({ searchParams }: PageProps) {
         </Link>
       </div>
 
-      {/* Bug #5: Empty state */}
       {(!products || products.length === 0) ? (
         <div className="max-w-6xl mx-auto text-center py-24">
           <p className="text-neutral-500 text-lg">No products found for this style yet.</p>
         </div>
       ) : (
-        /* Product grid */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {products.map((product: any) => (
-            <Link
-              key={product.id}
-              href={`/product/${product.id}`}
-              className="bg-neutral-900 rounded-2xl overflow-hidden flex flex-col border border-neutral-800 hover:border-neutral-600 transition-all duration-300 group"
-            >
-              <div className="overflow-hidden">
-                <img
-                  src={product.image_url}
-                  alt={product.title}
-                  className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-              </div>
-              <div className="p-5 flex flex-col">
-                <span className="text-xs font-semibold text-neutral-500 uppercase tracking-widest">
-                  {product.brands?.name}
-                </span>
-                <h2 className="text-base font-semibold text-white mt-1 leading-snug">
-                  {product.title}
-                </h2>
-                <p className="text-sm text-neutral-400 mt-2">
-                  ${Number(product.price).toFixed(2)}
-                </p>
-                <p className="text-xs text-neutral-600 mt-3 tracking-widest uppercase">Tap to view →</p>
-              </div>
-            </Link>
-          ))}
-        </div>
+        <DiscoveryFeed initialProducts={products as any} />
       )}
     </main>
   );

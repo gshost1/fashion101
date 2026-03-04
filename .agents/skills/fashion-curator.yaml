@@ -1,0 +1,32 @@
+name: fashion-curator-strict
+description: "Extracts product data from specified independent fashion URLs. Enforces strict aesthetic taxonomy and data quality constraints before generating Supabase SQL inserts."
+parameters:
+  target_url: "The specific URL of the brand's 'New Arrivals' or 'Shop All' page."
+  brand_name: "The exact name of the brand (e.g., 'Online Ceramics')."
+  target_style: "Must be EXACTLY one of: 'gorpcore', 'streetwear', or 'classic'."
+instructions: |
+  1. BROWSER NAVIGATION:
+     - Navigate strictly to the provided `target_url`.
+     - Bypass standard cookie banners. If the site requires a login wall to view products, ABORT.
+
+  2. DATA EXTRACTION RULES (STRICT QUALITY CONTROL):
+     - Extract `title`. Reject items with generic placeholder titles (e.g., "T-Shirt 1").
+     - Extract `price` as a clean numeric value (e.g., 120.00). Reject any items under $40 (filters out socks/accessories) to maintain a premium feed.
+     - Extract `image_url`. Must be a direct, high-resolution image link (.jpg, .png, .webp). Reject thumbnails, blurry images, or base64 data URIs.
+     - Extract `buy_url`. Must be the direct product detail page link.
+     - Extract `category`. You must map the item to ONE of these exact strings: 'outerwear', 'tops', 'bottoms', 'footwear', or 'accessories'. Do not invent categories. If a cap is scraped, label it 'accessories'.
+
+  3. TAXONOMY ENFORCEMENT:
+     - The extracted item MUST objectively fit the provided `target_style` parameter. 
+     - If the item's aesthetic is ambiguous or does not fit a high-end editorial feed, DISCARD IT. Do not guess.
+
+  4. SQL GENERATION (DO NOT EXECUTE):
+     - Check the existing Supabase database. If `brand_name` does not exist in `brands`, format an INSERT for it.
+     - Generate the product insert. Example format:
+       INSERT INTO products (title, price, image_url, buy_url, brand_id, style, category) 
+       VALUES ('[title]', [price], '[image_url]', '[buy_url]', (SELECT id FROM brands WHERE name = '[brand_name]'), '[target_style]', '[category]');
+
+  5. OUTPUT PROTOCOL:
+     - Output ONLY the raw SQL commands in a code block. 
+     - Do not explain your thought process. Do not write summary text.
+     - DO NOT execute the SQL automatically against the database. Stop and wait for human review.
