@@ -1,20 +1,23 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import type { Metadata } from 'next';
+import { Bebas_Neue, DM_Sans } from 'next/font/google';
+import './globals.css';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const bebasNeue = Bebas_Neue({
+  variable: '--font-bebas-neue',
+  subsets: ['latin'],
+  weight: '400',
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const dmSans = DM_Sans({
+  variable: '--font-dm-sans',
+  subsets: ['latin'],
 });
 
 export const metadata: Metadata = {
-  title: "Fashion101 – Discover Your Style",
-  description: "Take a quick style quiz and get a curated feed of fashion picks from brands like Patagonia, Stüssy, A.P.C., and more.",
+  title: 'THREAD | Editorial Marketplace for Independent Creators',
+  description: 'The editorial marketplace for independent creators and high-concept streetwear. Small batches, handmade soul, raw aesthetics.',
 };
 
 export default function RootLayout({
@@ -24,10 +27,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+      </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${bebasNeue.variable} ${dmSans.variable} font-body bg-background-light text-slate-900 antialiased pt-[76px]`}
       >
+        <Navbar />
         {children}
+        <Footer />
       </body>
     </html>
   );

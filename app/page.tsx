@@ -8,13 +8,6 @@ export const revalidate = 0;
 
 const validStyles = ['gorpcore', 'streetwear', 'classic', 'all'];
 
-const styleLabels: Record<string, string> = {
-  gorpcore: 'Gorpcore / Outdoors',
-  streetwear: 'Streetwear / Graphic',
-  classic: 'Classic / Minimalist',
-  all: 'All Styles',
-};
-
 interface PageProps {
   searchParams: Promise<{ style?: string }>;
 }
@@ -55,32 +48,123 @@ export default async function Home({ searchParams }: PageProps) {
     );
   }
 
-  const label = styleLabels[style] ?? style;
+  // Get up to 4 images for the hero section (fallback to placeholder if fewer)
+  const heroImages = [
+    products?.[0]?.image_url,
+    products?.[1]?.image_url,
+    products?.[2]?.image_url,
+    products?.[3]?.image_url,
+  ];
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] px-6 py-14">
-      <div className="max-w-6xl mx-auto mb-10 flex items-end justify-between">
-        <div>
-          <p className="text-xs font-semibold tracking-[0.3em] text-neutral-500 uppercase mb-2">
-            Your Style
-          </p>
-          <h1 className="text-3xl md:text-4xl font-bold text-white">{label}</h1>
+    <main>
+      {/* Section 1: Hero Section */}
+      <section className="px-6 lg:px-12 pb-16 pt-8">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          {/* Left: Editorial Content */}
+          <div className="flex flex-col gap-8">
+            <p className="text-primary uppercase tracking-widest font-bold text-sm">For Independent Fashion Creators</p>
+            <h1 className="heading-font text-8xl lg:text-[10rem] leading-[0.85] text-border-dark">
+              WEAR WHAT&apos;S <br /> <span className="text-primary">NEXT.</span>
+            </h1>
+            <p className="text-lg lg:text-xl max-w-lg font-medium leading-relaxed">
+              The editorial marketplace for independent creators and high-concept streetwear. Small batches, handmade soul, raw aesthetics.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <button className="bg-primary text-white px-10 py-4 uppercase font-bold text-lg border-2 border-border-dark shadow-[6px_6px_0px_0px_rgba(13,13,13,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
+                Shop the Feed
+              </button>
+              <button className="bg-white text-border-dark px-10 py-4 uppercase font-bold text-lg border-2 border-border-dark shadow-[6px_6px_0px_0px_rgba(13,13,13,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
+                Start Selling
+              </button>
+            </div>
+            {/* Stat Counters */}
+            <div className="flex gap-12 pt-8 border-t-2 border-border-dark/10">
+              <div>
+                <p className="heading-font text-4xl text-primary">2K+</p>
+                <p className="uppercase text-xs font-black tracking-widest opacity-60">Creators</p>
+              </div>
+              <div>
+                <p className="heading-font text-4xl text-primary">15K+</p>
+                <p className="uppercase text-xs font-black tracking-widest opacity-60">Live Pieces</p>
+              </div>
+              <div>
+                <p className="heading-font text-4xl text-primary">50K+</p>
+                <p className="uppercase text-xs font-black tracking-widest opacity-60">Community</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Lookbook Grid */}
+          <div className="grid grid-cols-2 gap-4">
+            {[0, 1, 2, 3].map((index) => {
+              const imgUrl = heroImages[index];
+              const offsets = ['', 'translate-y-8', '-translate-y-4', 'translate-y-4'];
+              const labels = ['Look 01 / $240', 'Handmade / $185', 'Capsule / $310', 'Archive / $150'];
+
+              return (
+                <div key={index} className={`relative border-2 border-border-dark aspect-[3/4] overflow-hidden group ${offsets[index]}`}>
+                  {imgUrl ? (
+                    <img
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      src={imgUrl}
+                      alt="Hero Lookbook Image"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-[#C8C0B4]"></div>
+                  )}
+                  <div className="absolute bottom-2 left-2 bg-white border border-border-dark px-2 py-1 text-[10px] font-black uppercase">
+                    {labels[index]}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Section 2: Scrolling Marquee */}
+      <section className="bg-primary py-6 border-y-2 border-border-dark overflow-hidden">
+        <div className="marquee">
+          <div className="marquee-content flex gap-8 items-center">
+            {[...Array(4)].map((_, i) => (
+              <span key={i} className="heading-font text-4xl text-white uppercase px-4 whitespace-nowrap">
+                Independent Designers · Small Batch · Handmade Pieces · Not Fast Fashion · Wear What&apos;s Next ·
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Section 3: Style Quiz Banner */}
+      <section className="bg-background-dark text-white px-6 lg:px-12 py-12 flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="flex items-center gap-6">
+          <div className="bg-primary p-4 border-2 border-white">
+            <span className="material-symbols-outlined text-4xl leading-none">style</span>
+          </div>
+          <div>
+            <h3 className="heading-font text-4xl uppercase">Take the Style Quiz</h3>
+            <p className="text-sm opacity-80 uppercase tracking-widest font-bold">Discover your signature aesthetic in 2 minutes.</p>
+          </div>
         </div>
         <Link
           href="/retake"
-          className="text-xs text-neutral-500 hover:text-white transition border border-neutral-800 hover:border-neutral-500 px-4 py-2 rounded-lg"
+          className="bg-white text-background-dark px-10 py-4 uppercase font-bold text-lg border-2 border-primary hover:bg-primary hover:text-white transition-all text-center"
         >
-          Retake Quiz
+          Start Quiz
         </Link>
-      </div>
+      </section>
 
-      {(!products || products.length === 0) ? (
-        <div className="max-w-6xl mx-auto text-center py-24">
-          <p className="text-neutral-500 text-lg">No products found for this style yet.</p>
-        </div>
-      ) : (
-        <DiscoveryFeed initialProducts={products as any} showStyleFilter={isAll} />
-      )}
+      {/* Section 4: Product Feed */}
+      <section className="px-6 lg:px-12 py-20">
+        {(!products || products.length === 0) ? (
+          <div className="max-w-6xl mx-auto text-center py-24">
+            <p className="text-slate-500 font-bold uppercase tracking-widest">No products found for this style.</p>
+          </div>
+        ) : (
+          <DiscoveryFeed initialProducts={products as any} showStyleFilter={isAll} />
+        )}
+      </section>
     </main>
   );
 }

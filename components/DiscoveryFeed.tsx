@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { SlidersHorizontal, X, Plus, Minus } from 'lucide-react';
+import { SlidersHorizontal, X, Plus, Minus, Heart } from 'lucide-react';
 
 const categories = ['Outerwear', 'Tops', 'Bottoms', 'Footwear', 'Accessories'];
 const styles = ['Gorpcore', 'Streetwear', 'Classic'];
@@ -37,6 +37,23 @@ export default function DiscoveryFeed({ initialProducts, showStyleFilter = false
     const [pendingCategories, setPendingCategories] = useState<string[]>([]);
     const [pendingStyles, setPendingStyles] = useState<string[]>([]);
     const [pendingSort, setPendingSort] = useState<string>('Newest');
+
+    // UI-only top tabs 
+    const [activeTab, setActiveTab] = useState('Womenswear');
+
+    // Local wishlist state (visual only, Set of product IDs)
+    const [wishlist, setWishlist] = useState<Set<number>>(new Set());
+
+    function toggleWishlist(e: React.MouseEvent, productId: number) {
+        e.preventDefault();
+        e.stopPropagation();
+        setWishlist((prev) => {
+            const next = new Set(prev);
+            if (next.has(productId)) next.delete(productId);
+            else next.add(productId);
+            return next;
+        });
+    }
 
     // Filter products
     const filtered = initialProducts
@@ -86,7 +103,6 @@ export default function DiscoveryFeed({ initialProducts, showStyleFilter = false
         );
     }
 
-    // Count how many products match pending filters
     const pendingCount = initialProducts.filter((p) => {
         const matchCat = pendingCategories.length === 0 || pendingCategories.includes(p.category?.toLowerCase() ?? '');
         const matchStyle = !showStyleFilter || pendingStyles.length === 0 || pendingStyles.includes(p.style?.toLowerCase() ?? '');
@@ -95,94 +111,114 @@ export default function DiscoveryFeed({ initialProducts, showStyleFilter = false
 
     return (
         <>
+            {/* THREAD Tabs Row (UI Only) */}
+            {/* TODO: add gender field to products table to enable tab filtering */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-6 border-b-2 border-border-dark pb-4">
+                <div className="flex gap-8 overflow-x-auto scrollbar-hide">
+                    {['Womenswear', 'Menswear', 'Unisex', 'Accessories'].map((tab) => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={`heading-font text-4xl uppercase pb-2 whitespace-nowrap transition-opacity ${activeTab === tab ? 'border-b-4 border-primary opacity-100' : 'opacity-30 hover:opacity-100'
+                                }`}
+                        >
+                            {tab}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
             {/* Filter/Sort header bar */}
-            <div className="max-w-6xl mx-auto flex justify-between items-center py-4 mb-6 border-b border-neutral-800">
+            <div className="flex justify-between items-center py-4 mb-6 border-b-2 border-border-dark">
                 <button
                     onClick={openDrawer}
-                    className="flex items-center gap-2 text-sm font-medium text-white hover:text-neutral-300 transition-colors"
+                    className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest hover:text-primary transition-colors"
                 >
-                    <SlidersHorizontal size={16} />
-                    Filter / Sort
+                    <SlidersHorizontal size={18} />
+                    Filter & Sort
                 </button>
-                <span className="text-sm text-neutral-500">
-                    {filtered.length} {filtered.length === 1 ? 'Item' : 'Items'}
+                <span className="text-sm font-bold opacity-60 uppercase tracking-widest">
+                    {filtered.length} {filtered.length === 1 ? 'Piece' : 'Pieces'}
                 </span>
             </div>
 
             {/* Product grid or empty state */}
             {filtered.length === 0 ? (
-                <div className="max-w-6xl mx-auto text-center py-24">
-                    <p className="text-neutral-500 text-lg">No products match these filters.</p>
+                <div className="text-center py-24">
+                    <p className="text-slate-500 font-bold uppercase tracking-widest">No products match these filters.</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-                    {filtered.map((product) => (
-                        <Link
-                            key={product.id}
-                            href={`/product/${product.id}`}
-                            className="bg-neutral-900 rounded-2xl overflow-hidden flex flex-col border border-neutral-800 hover:border-neutral-600 transition-all duration-300 group"
-                        >
-                            <div className="overflow-hidden">
-                                <img
-                                    src={product.image_url}
-                                    alt={product.title}
-                                    className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
-                                />
-                            </div>
-                            <div className="p-5 flex flex-col">
-                                <span className="text-xs font-semibold text-neutral-500 uppercase tracking-widest">
-                                    {product.brands?.name}
-                                </span>
-                                <h2 className="text-base font-semibold text-white mt-1 leading-snug">
-                                    {product.title}
-                                </h2>
-                                <p className="text-sm text-neutral-400 mt-2">
-                                    ${Number(product.price).toFixed(2)}
-                                </p>
-                                <p className="text-xs text-neutral-600 mt-3 tracking-widest uppercase">Tap to view →</p>
-                            </div>
-                        </Link>
-                    ))}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">
+                    {filtered.map((product) => {
+                        const isLiked = wishlist.has(product.id);
+                        return (
+                            <Link key={product.id} href={`/product/${product.id}`} className="product-card group relative block">
+                                <div className="relative border-2 border-border-dark aspect-[4/5] overflow-hidden bg-slate-200">
+                                    <img
+                                        src={product.image_url}
+                                        alt={product.title}
+                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                    />
+                                    <button
+                                        onClick={(e) => toggleWishlist(e, product.id)}
+                                        className={`absolute top-4 right-4 bg-white p-2 border-2 border-border-dark transition-all duration-300 hover:text-primary ${isLiked ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-100'
+                                            }`}
+                                    >
+                                        <Heart size={20} className={isLiked ? "fill-current" : ""} />
+                                    </button>
+                                </div>
+                                <div className="mt-4 flex flex-col gap-2">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-6 h-6 border border-border-dark overflow-hidden bg-slate-100 flex items-center justify-center">
+                                                <span className="text-[10px] font-bold">{product.brands?.name.charAt(0)}</span>
+                                            </div>
+                                            <span className="text-xs font-black uppercase opacity-60">@{product.brands?.name.replace(/\s+/g, '_').toUpperCase()}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 opacity-60">
+                                            <Heart size={14} className={isLiked ? "fill-current text-primary" : ""} />
+                                            <span className="text-[10px] font-bold">{isLiked ? '1' : '0'}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-start gap-4">
+                                        <h4 className="heading-font text-2xl leading-none">{product.title}</h4>
+                                        <p className="heading-font text-2xl text-primary">${Number(product.price).toFixed(0)}</p>
+                                    </div>
+                                </div>
+                            </Link>
+                        );
+                    })}
                 </div>
             )}
 
+            <div className="mt-20 flex justify-center">
+                <button className="bg-white text-border-dark px-12 py-4 uppercase font-bold text-lg border-2 border-border-dark hover:bg-border-dark hover:text-white transition-all tracking-widest shadow-[4px_4px_0px_0px_rgba(13,13,13,1)] hover:shadow-none hover:translate-y-1 hover:translate-x-1">
+                    Explore All Pieces
+                </button>
+            </div>
+
             {/* Drawer overlay */}
             {drawerOpen && (
-                <div className="fixed inset-0 z-50 flex justify-end">
-                    {/* Backdrop */}
-                    <div
-                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                        onClick={() => setDrawerOpen(false)}
-                    />
-
-                    {/* Drawer panel */}
-                    <div className="relative w-full max-w-md h-full bg-[#0a0a0a] border-l border-neutral-800 flex flex-col animate-slide-in">
-                        {/* Header */}
-                        <div className="flex justify-between items-center px-6 py-5 border-b border-neutral-800">
-                            <div className="flex items-center gap-2 text-sm font-medium text-white">
-                                <SlidersHorizontal size={16} />
-                                Filter / Sort
+                <div className="fixed inset-0 z-[60] flex justify-end">
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDrawerOpen(false)} />
+                    <div className="relative w-full max-w-md h-full bg-background-light border-l-2 border-border-dark flex flex-col animate-slide-in shadow-2xl">
+                        <div className="flex justify-between items-center px-6 py-6 border-b-2 border-border-dark">
+                            <div className="flex items-center gap-2 heading-font text-3xl">
+                                <SlidersHorizontal size={24} />
+                                FILTER / SORT
                             </div>
-                            <button
-                                onClick={() => setDrawerOpen(false)}
-                                className="text-neutral-400 hover:text-white transition-colors"
-                            >
-                                <X size={20} />
+                            <button onClick={() => setDrawerOpen(false)} className="hover:text-primary transition-colors">
+                                <X size={28} />
                             </button>
                         </div>
-
-                        {/* Scrollable sections */}
                         <div className="flex-1 overflow-y-auto">
-                            {/* Sort By */}
-                            <AccordionSection title="Sort By" defaultOpen>
-                                <div className="flex flex-col gap-1">
+                            <AccordionSection title="SORT BY" defaultOpen>
+                                <div className="flex flex-col gap-2">
                                     {sortOptions.map((opt) => (
                                         <button
                                             key={opt}
                                             onClick={() => setPendingSort(opt)}
-                                            className={`text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${pendingSort === opt
-                                                    ? 'text-white bg-white/10'
-                                                    : 'text-neutral-400 hover:text-white'
+                                            className={`text-left px-4 py-3 border-2 text-sm uppercase font-bold tracking-widest transition-all ${pendingSort === opt ? 'border-border-dark bg-border-dark text-white' : 'border-transparent hover:border-black/10'
                                                 }`}
                                         >
                                             {opt}
@@ -190,64 +226,44 @@ export default function DiscoveryFeed({ initialProducts, showStyleFilter = false
                                     ))}
                                 </div>
                             </AccordionSection>
-
-                            {/* Style — only when browsing all */}
                             {showStyleFilter && (
-                                <AccordionSection title="Style">
-                                    <div className="flex flex-col gap-1">
+                                <AccordionSection title="AESTHETIC">
+                                    <div className="flex flex-col gap-2">
                                         {styles.map((s) => (
                                             <button
                                                 key={s}
                                                 onClick={() => togglePendingStyle(s)}
-                                                className={`text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex justify-between items-center ${pendingStyles.includes(s.toLowerCase())
-                                                        ? 'text-white bg-white/10'
-                                                        : 'text-neutral-400 hover:text-white'
+                                                className={`text-left px-4 py-3 border-2 text-sm uppercase font-bold tracking-widest transition-all flex justify-between items-center ${pendingStyles.includes(s.toLowerCase()) ? 'border-border-dark bg-border-dark text-white' : 'border-transparent hover:border-black/10'
                                                     }`}
                                             >
                                                 {s}
-                                                {pendingStyles.includes(s.toLowerCase()) && (
-                                                    <span className="text-xs">✓</span>
-                                                )}
+                                                {pendingStyles.includes(s.toLowerCase()) && <span>✓</span>}
                                             </button>
                                         ))}
                                     </div>
                                 </AccordionSection>
                             )}
-
-                            {/* Category */}
-                            <AccordionSection title="Category">
-                                <div className="flex flex-col gap-1">
+                            <AccordionSection title="CATEGORY">
+                                <div className="flex flex-col gap-2">
                                     {categories.map((cat) => (
                                         <button
                                             key={cat}
                                             onClick={() => togglePendingCategory(cat)}
-                                            className={`text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex justify-between items-center ${pendingCategories.includes(cat.toLowerCase())
-                                                    ? 'text-white bg-white/10'
-                                                    : 'text-neutral-400 hover:text-white'
+                                            className={`text-left px-4 py-3 border-2 text-sm uppercase font-bold tracking-widest transition-all flex justify-between items-center ${pendingCategories.includes(cat.toLowerCase()) ? 'border-border-dark bg-border-dark text-white' : 'border-transparent hover:border-black/10'
                                                 }`}
                                         >
                                             {cat}
-                                            {pendingCategories.includes(cat.toLowerCase()) && (
-                                                <span className="text-xs">✓</span>
-                                            )}
+                                            {pendingCategories.includes(cat.toLowerCase()) && <span>✓</span>}
                                         </button>
                                     ))}
                                 </div>
                             </AccordionSection>
                         </div>
-
-                        {/* Footer buttons */}
-                        <div className="px-6 py-5 border-t border-neutral-800 flex gap-3">
-                            <button
-                                onClick={clearAll}
-                                className="flex-1 py-3 rounded-lg border border-neutral-700 text-sm font-semibold text-white hover:bg-neutral-900 transition-colors"
-                            >
+                        <div className="px-6 py-6 border-t-2 border-border-dark flex gap-4 bg-background-light">
+                            <button onClick={clearAll} className="flex-1 py-4 border-2 border-border-dark text-sm font-bold uppercase tracking-widest hover:bg-black/5 transition-colors">
                                 Clear All
                             </button>
-                            <button
-                                onClick={applyFilters}
-                                className="flex-1 py-3 rounded-lg bg-white text-black text-sm font-semibold hover:bg-neutral-200 transition-colors"
-                            >
+                            <button onClick={applyFilters} className="flex-1 py-4 bg-primary text-white border-2 border-border-dark text-sm font-bold uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(13,13,13,1)] active:shadow-none active:translate-y-1 active:translate-x-1 transition-all">
                                 Apply ({pendingCount})
                             </button>
                         </div>
@@ -258,32 +274,18 @@ export default function DiscoveryFeed({ initialProducts, showStyleFilter = false
     );
 }
 
-/* Accordion section component */
-function AccordionSection({
-    title,
-    defaultOpen = false,
-    children,
-}: {
-    title: string;
-    defaultOpen?: boolean;
-    children: React.ReactNode;
-}) {
+function AccordionSection({ title, defaultOpen = false, children }: { title: string; defaultOpen?: boolean; children: React.ReactNode }) {
     const [open, setOpen] = useState(defaultOpen);
-
     return (
-        <div className="border-b border-neutral-800">
+        <div className="border-b-2 border-border-dark">
             <button
                 onClick={() => setOpen(!open)}
-                className="w-full flex justify-between items-center px-6 py-5 text-sm font-semibold text-white hover:text-neutral-300 transition-colors"
+                className="w-full flex justify-between items-center px-6 py-6 heading-font text-2xl hover:text-primary transition-colors"
             >
                 {title}
-                {open ? <Minus size={16} className="text-neutral-500" /> : <Plus size={16} className="text-neutral-500" />}
+                {open ? <Minus size={20} /> : <Plus size={20} />}
             </button>
-            {open && (
-                <div className="px-6 pb-5">
-                    {children}
-                </div>
-            )}
+            {open && <div className="px-6 pb-6">{children}</div>}
         </div>
     );
 }
